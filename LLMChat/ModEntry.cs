@@ -17,6 +17,7 @@ public class ModEntry : Mod
     private PersonalityManager _personalityManager = null!;
     private ConversationStore _conversationStore = null!;
     private LlmService _llmService = null!;
+    private WorldStateTracker _worldStateTracker = null!;
 
     public override void Entry(IModHelper helper)
     {
@@ -37,6 +38,9 @@ public class ModEntry : Mod
         // Initialize personality manager
         _personalityManager = new PersonalityManager(helper, Monitor, _config.ResponseLanguage);
         _personalityManager.LoadPersonalities();
+
+        // Initialize world state tracker
+        _worldStateTracker = new WorldStateTracker();
 
         // Initialize conversation store
         _conversationStore = new ConversationStore(helper, Monitor, _config.ConversationHistorySize);
@@ -59,6 +63,7 @@ public class ModEntry : Mod
 
         // Debug console commands
         helper.ConsoleCommands.Add("llm_settime", "Set game time (e.g., llm_settime 800)", OnSetTime);
+        helper.ConsoleCommands.Add("llm_money", "Set player money (e.g., llm_money 1000000)", OnSetMoney);
 
         Monitor.Log("LLM Chat mod loaded!", LogLevel.Info);
     }
@@ -215,6 +220,7 @@ public class ModEntry : Mod
     private void OnDayStarted(object? sender, DayStartedEventArgs e)
     {
         _llmService.ResetDailyCount();
+        _worldStateTracker.OnDayStarted();
     }
 
     private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
@@ -253,7 +259,7 @@ public class ModEntry : Mod
             return;
         }
 
-        Game1.activeClickableMenu = new ChatMenu(npc, _llmService, _personalityManager, _conversationStore);
+        Game1.activeClickableMenu = new ChatMenu(npc, _llmService, _personalityManager, _conversationStore, _worldStateTracker);
     }
 
     private void OnSetTime(string command, string[] args)
@@ -272,6 +278,24 @@ public class ModEntry : Mod
 
         Game1.timeOfDay = time;
         Monitor.Log($"Time set to {time}.", LogLevel.Info);
+    }
+
+    private void OnSetMoney(string command, string[] args)
+    {
+        if (!Context.IsWorldReady)
+        {
+            Monitor.Log("Save must be loaded first.", LogLevel.Warn);
+            return;
+        }
+
+        if (args.Length == 0 || !int.TryParse(args[0], out int amount))
+        {
+            Monitor.Log("Usage: llm_money 1000000", LogLevel.Info);
+            return;
+        }
+
+        Game1.player.Money = amount;
+        Monitor.Log($"Money set to {amount}g.", LogLevel.Info);
     }
 
     private static NPC? FindNearbyNpc(Farmer farmer)

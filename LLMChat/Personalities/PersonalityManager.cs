@@ -53,7 +53,7 @@ public class PersonalityManager
         return _personalities.GetValueOrDefault(npcName);
     }
 
-    public string BuildSystemPrompt(NPC npc, ConversationHistory? history = null)
+    public string BuildSystemPrompt(NPC npc, ConversationHistory? history = null, List<string>? topics = null)
     {
         var personality = GetPersonality(npc.Name);
         var prompt = new System.Text.StringBuilder();
@@ -130,6 +130,15 @@ public class PersonalityManager
         prompt.AppendLine($"- Player name: {farmer.Name}");
         prompt.AppendLine($"- Farm name: {farmer.farmName.Value}");
         prompt.AppendLine();
+
+        // Conversation topics (reactive world events)
+        if (topics != null && topics.Count > 0)
+        {
+            prompt.AppendLine("## Things happening around the valley (use as natural conversation topics if relevant)");
+            foreach (var topic in topics)
+                prompt.AppendLine($"- {topic}");
+            prompt.AppendLine();
+        }
 
         // Long-term memory
         if (history != null)
