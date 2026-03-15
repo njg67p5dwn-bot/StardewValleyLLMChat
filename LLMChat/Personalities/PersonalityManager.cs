@@ -94,7 +94,7 @@ public class PersonalityManager
         // Dynamic game state
         prompt.AppendLine("## Current Game State");
         prompt.AppendLine($"- Season: {Game1.currentSeason}");
-        prompt.AppendLine($"- Day: {Game1.dayOfMonth}");
+        prompt.AppendLine($"- Day: {Game1.shortDayNameFromDayOfSeason(Game1.dayOfMonth)}, {Game1.dayOfMonth}");
         prompt.AppendLine($"- Year: {Game1.year}");
         prompt.AppendLine($"- Time: {Game1.timeOfDay}");
         prompt.AppendLine($"- Weather: {GetWeatherDescription()}");
