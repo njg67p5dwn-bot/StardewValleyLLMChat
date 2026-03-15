@@ -1,0 +1,40 @@
+using StardewModdingAPI;
+using StardewModdingAPI.Utilities;
+
+namespace LLMChat;
+
+/// <summary>GMCM API interface (https://www.nexusmods.com/stardewvalley/mods/5098)</summary>
+public interface IGenericModConfigMenuApi
+{
+    void Register(IManifest mod, Action reset, Action save);
+
+    void AddTextOption(
+        IManifest mod,
+        Func<string> getValue,
+        Action<string> setValue,
+        Func<string> name,
+        Func<string>? tooltip = null,
+        string[]? allowedValues = null,
+        Func<string, string>? formatAllowedValue = null,
+        string? fieldId = null);
+
+    void AddNumberOption(
+        IManifest mod,
+        Func<int> getValue,
+        Action<int> setValue,
+        Func<string> name,
+        Func<string>? tooltip = null,
+        int? min = null,
+        int? max = null,
+        int? interval = null,
+        Func<int, string>? formatValue = null,
+        string? fieldId = null);
+
+    void AddKeybindList(
+        IManifest mod,
+        Func<KeybindList> getValue,
+        Action<KeybindList> setValue,
+        Func<string> name,
+        Func<string>? tooltip = null,
+        string? fieldId = null);
+}

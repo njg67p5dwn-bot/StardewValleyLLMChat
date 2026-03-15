@@ -151,7 +151,7 @@ Provider routing in `ModEntry.CreateLlmProvider()`:
 - [x] Cross-platform SDL2 interop: Uses `NativeLibrary.Load()` with runtime OS detection for Windows (`SDL2.dll`), macOS (`libSDL2.dylib`), Linux (`libSDL2-2.0.so.0`)
 ### Should do
 - [ ] Add personality JSONs for remaining ~28 NPCs
-- [ ] Generic Mod Config Menu (GMCM) integration for in-game settings
+- [x] Generic Mod Config Menu (GMCM) integration for in-game settings
 - [ ] Conversation summarization for long-term memory (use LLM to summarize old messages)
 - [ ] Thread safety: `_displayMessages` list is modified from async callback and read from game thread
 

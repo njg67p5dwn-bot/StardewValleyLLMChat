@@ -51,6 +51,7 @@ public class ModEntry : Mod
         DialoguePatcher.Apply(harmony);
 
         // Register events
+        helper.Events.GameLoop.GameLaunched += OnGameLaunched;
         helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         helper.Events.GameLoop.Saving += OnSaving;
         helper.Events.GameLoop.DayStarted += OnDayStarted;
@@ -71,6 +72,109 @@ public class ModEntry : Mod
                 new OpenAiCompatibleProvider(_config.ApiKey, _config.ModelId, _config.BaseUrl, Monitor),
             _ => new OpenAiCompatibleProvider(_config.ApiKey, _config.ModelId, _config.BaseUrl, Monitor)
         };
+    }
+
+    private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+    {
+        var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+        if (configMenu is null)
+            return;
+
+        configMenu.Register(
+            mod: ModManifest,
+            reset: () => _config = new ModConfig(),
+            save: () =>
+            {
+                Helper.WriteConfig(_config);
+                // Reinitialize services with new config
+                Strings.SetLanguage(_config.ResponseLanguage);
+                var provider = CreateLlmProvider();
+                _llmService = new LlmService(provider, Monitor, _config.MaxTokens, _config.DailyCallLimit);
+            }
+        );
+
+        configMenu.AddTextOption(
+            mod: ModManifest,
+            name: () => "Provider",
+            tooltip: () => "LLM provider (claude, openai, openai-compatible, ollama, local)",
+            getValue: () => _config.Provider,
+            setValue: value => _config.Provider = value,
+            allowedValues: new[] { "claude", "openai", "openai-compatible", "ollama", "local" }
+        );
+
+        configMenu.AddTextOption(
+            mod: ModManifest,
+            name: () => "API Key",
+            tooltip: () => "API key for the LLM provider",
+            getValue: () => _config.ApiKey,
+            setValue: value => _config.ApiKey = value
+        );
+
+        configMenu.AddTextOption(
+            mod: ModManifest,
+            name: () => "Model ID",
+            tooltip: () => "Model identifier (e.g., claude-haiku-4-5-20251001, gpt-4o-mini, llama3)",
+            getValue: () => _config.ModelId,
+            setValue: value => _config.ModelId = value
+        );
+
+        configMenu.AddTextOption(
+            mod: ModManifest,
+            name: () => "Base URL",
+            tooltip: () => "API endpoint URL (e.g., https://api.openai.com, https://openrouter.ai/api/v1/chat/completions)",
+            getValue: () => _config.BaseUrl,
+            setValue: value => _config.BaseUrl = value
+        );
+
+        configMenu.AddNumberOption(
+            mod: ModManifest,
+            name: () => "Max Tokens",
+            tooltip: () => "Maximum tokens per NPC response",
+            getValue: () => _config.MaxTokens,
+            setValue: value => _config.MaxTokens = value,
+            min: 50,
+            max: 2000,
+            interval: 50
+        );
+
+        configMenu.AddKeybindList(
+            mod: ModManifest,
+            name: () => "Chat Hotkey",
+            tooltip: () => "Key to open chat when near an NPC",
+            getValue: () => _config.ChatHotkey,
+            setValue: value => _config.ChatHotkey = value
+        );
+
+        configMenu.AddNumberOption(
+            mod: ModManifest,
+            name: () => "Daily Call Limit",
+            tooltip: () => "Maximum API calls per in-game day (0 = unlimited)",
+            getValue: () => _config.DailyCallLimit,
+            setValue: value => _config.DailyCallLimit = value,
+            min: 0,
+            max: 200,
+            interval: 5
+        );
+
+        configMenu.AddNumberOption(
+            mod: ModManifest,
+            name: () => "Conversation History Size",
+            tooltip: () => "Number of messages to keep in conversation context",
+            getValue: () => _config.ConversationHistorySize,
+            setValue: value => _config.ConversationHistorySize = value,
+            min: 5,
+            max: 100,
+            interval: 5
+        );
+
+        configMenu.AddTextOption(
+            mod: ModManifest,
+            name: () => "Response Language",
+            tooltip: () => "Language for NPC responses",
+            getValue: () => _config.ResponseLanguage,
+            setValue: value => _config.ResponseLanguage = value,
+            allowedValues: new[] { "ko", "en", "ja", "zh", "es", "fr", "de", "pt", "ru" }
+        );
     }
 
     private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
