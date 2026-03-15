@@ -31,6 +31,17 @@ dotnet build
 
 ## 설정
 
+### 인게임 설정 (GMCM)
+
+[Generic Mod Config Menu](https://www.nexusmods.com/stardewvalley/mods/5098)가 설치되어 있으면 게임 내에서 모든 설정을 변경할 수 있습니다.
+
+- **타이틀 화면** — 하단의 톱니바퀴 아이콘 클릭
+- **게임 중** — ESC → 옵션 탭 → 하단 스크롤 → LLM Chat 설정
+
+GMCM 없이도 모드는 정상 동작하며, 아래 `config.json`을 직접 수정해도 됩니다.
+
+### config.json
+
 SMAPI로 게임을 한 번 실행하면 `{게임 폴더}/Mods/LLMChat/config.json`이 자동 생성됩니다. 아래 예시를 참고하여 수정하세요.
 
 ### Claude 사용 시
