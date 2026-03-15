@@ -6,7 +6,15 @@ namespace LLMChat;
 /// <summary>GMCM API interface (https://www.nexusmods.com/stardewvalley/mods/5098)</summary>
 public interface IGenericModConfigMenuApi
 {
-    void Register(IManifest mod, Action reset, Action save);
+    void Register(IManifest mod, Action reset, Action save, bool titleScreenOnly = false);
+
+    void AddPage(IManifest mod, string pageId, Func<string>? pageTitle = null);
+
+    void AddPageLink(IManifest mod, string pageId, Func<string> text, Func<string>? tooltip = null);
+
+    void AddSectionTitle(IManifest mod, Func<string> text, Func<string>? tooltip = null);
+
+    void AddParagraph(IManifest mod, Func<string> text);
 
     void AddTextOption(
         IManifest mod,

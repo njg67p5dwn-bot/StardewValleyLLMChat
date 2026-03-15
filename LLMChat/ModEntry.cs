@@ -93,37 +93,17 @@ public class ModEntry : Mod
             }
         );
 
+        // === Main page ===
+        configMenu.AddPageLink(mod: ModManifest, pageId: "api", text: () => "API Settings >",
+            tooltip: () => "Provider, API Key, Model ID, Base URL");
+
         configMenu.AddTextOption(
             mod: ModManifest,
             name: () => "Provider",
-            tooltip: () => "LLM provider (claude, openai, openai-compatible, ollama, local)",
+            tooltip: () => "LLM provider",
             getValue: () => _config.Provider,
             setValue: value => _config.Provider = value,
             allowedValues: new[] { "claude", "openai", "openai-compatible", "ollama", "local" }
-        );
-
-        configMenu.AddTextOption(
-            mod: ModManifest,
-            name: () => "API Key",
-            tooltip: () => "API key for the LLM provider",
-            getValue: () => _config.ApiKey,
-            setValue: value => _config.ApiKey = value
-        );
-
-        configMenu.AddTextOption(
-            mod: ModManifest,
-            name: () => "Model ID",
-            tooltip: () => "Model identifier (e.g., claude-haiku-4-5-20251001, gpt-4o-mini, llama3)",
-            getValue: () => _config.ModelId,
-            setValue: value => _config.ModelId = value
-        );
-
-        configMenu.AddTextOption(
-            mod: ModManifest,
-            name: () => "Base URL",
-            tooltip: () => "API endpoint URL (e.g., https://api.openai.com, https://openrouter.ai/api/v1/chat/completions)",
-            getValue: () => _config.BaseUrl,
-            setValue: value => _config.BaseUrl = value
         );
 
         configMenu.AddNumberOption(
@@ -158,7 +138,7 @@ public class ModEntry : Mod
 
         configMenu.AddNumberOption(
             mod: ModManifest,
-            name: () => "Conversation History Size",
+            name: () => "History Size",
             tooltip: () => "Number of messages to keep in conversation context",
             getValue: () => _config.ConversationHistorySize,
             setValue: value => _config.ConversationHistorySize = value,
@@ -174,6 +154,39 @@ public class ModEntry : Mod
             getValue: () => _config.ResponseLanguage,
             setValue: value => _config.ResponseLanguage = value,
             allowedValues: new[] { "ko", "en", "ja", "zh", "es", "fr", "de", "pt", "ru" }
+        );
+
+        // === API Settings page ===
+        configMenu.AddPage(mod: ModManifest, pageId: "api", pageTitle: () => "API Settings");
+
+        configMenu.AddParagraph(mod: ModManifest,
+            text: () => $"Current: {_config.ApiKey[..Math.Min(8, _config.ApiKey.Length)]}...");
+        configMenu.AddTextOption(
+            mod: ModManifest,
+            name: () => "API Key",
+            tooltip: () => "API key for the LLM provider",
+            getValue: () => _config.ApiKey,
+            setValue: value => _config.ApiKey = value
+        );
+
+        configMenu.AddParagraph(mod: ModManifest,
+            text: () => $"Current: {_config.ModelId}");
+        configMenu.AddTextOption(
+            mod: ModManifest,
+            name: () => "Model ID",
+            tooltip: () => "e.g., claude-haiku-4-5-20251001, gpt-4o-mini, llama3",
+            getValue: () => _config.ModelId,
+            setValue: value => _config.ModelId = value
+        );
+
+        configMenu.AddParagraph(mod: ModManifest,
+            text: () => $"Current: {_config.BaseUrl}");
+        configMenu.AddTextOption(
+            mod: ModManifest,
+            name: () => "Base URL",
+            tooltip: () => "e.g., https://api.openai.com, https://openrouter.ai/api/v1/chat/completions",
+            getValue: () => _config.BaseUrl,
+            setValue: value => _config.BaseUrl = value
         );
     }
 
