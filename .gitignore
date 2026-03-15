@@ -14,3 +14,6 @@ Thumbs.db
 
 # Mod config (contains API keys)
 config.json
+
+# Claude Code
+CLAUDE.md
