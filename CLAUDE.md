@@ -139,8 +139,6 @@ Provider routing in `ModEntry.CreateLlmProvider()`:
 - `"openai"`, `"openai-compatible"`, `"ollama"`, `"local"`, or anything else → `OpenAiCompatibleProvider`
 
 ## User's current setup
-- Provider: OpenRouter (`https://openrouter.ai/api/v1/chat/completions`)
-- Model: `google/gemini-3.1-flash-lite-preview`
 - Game language: Korean
 - Platform: Linux (Ubuntu, kernel 6.17)
 - Stardew Valley 1.6.15, SMAPI 4.5.1
