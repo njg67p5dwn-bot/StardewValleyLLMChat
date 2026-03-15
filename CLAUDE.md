@@ -149,8 +149,6 @@ Provider routing in `ModEntry.CreateLlmProvider()`:
 
 ### Must fix
 - [x] Cross-platform SDL2 interop: Uses `NativeLibrary.Load()` with runtime OS detection for Windows (`SDL2.dll`), macOS (`libSDL2.dylib`), Linux (`libSDL2-2.0.so.0`)
-- [ ] Korean IME composition display: The composing character (e.g., "ㅇ" → "요") is NOT visible during typing. Only committed characters show. Would need SDL2 `SDL_TEXTEDITING` event handling to display preedit text
-
 ### Should do
 - [ ] Add personality JSONs for remaining ~28 NPCs
 - [ ] Generic Mod Config Menu (GMCM) integration for in-game settings
