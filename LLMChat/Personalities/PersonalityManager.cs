@@ -101,6 +101,16 @@ public class PersonalityManager
         prompt.AppendLine($"- Weather: {GetWeatherDescription()}");
         prompt.AppendLine($"- Location: {npc.currentLocation?.Name ?? "unknown"}");
 
+        // Birthday
+        var birthdayInfo = GetBirthdayInfo(npc);
+        if (birthdayInfo != null)
+            prompt.AppendLine($"- {birthdayInfo}");
+
+        // Festival
+        var festivalInfo = GetFestivalInfo();
+        if (festivalInfo != null)
+            prompt.AppendLine($"- {festivalInfo}");
+
         // Friendship
         var farmer = Game1.player;
         if (farmer.friendshipData.TryGetValue(npc.Name, out var friendship))
@@ -150,6 +160,46 @@ public class PersonalityManager
         prompt.AppendLine("- Reference your known likes, dislikes, and relationships when relevant.");
 
         return prompt.ToString();
+    }
+
+    private static string? GetBirthdayInfo(NPC npc)
+    {
+        var bSeason = npc.Birthday_Season;
+        var bDay = npc.Birthday_Day;
+
+        if (string.IsNullOrEmpty(bSeason) || bDay <= 0)
+            return null;
+
+        if (bSeason == Game1.currentSeason && bDay == Game1.dayOfMonth)
+            return $"Today is YOUR birthday! ({bSeason} {bDay})";
+
+        if (bSeason == Game1.currentSeason && bDay > Game1.dayOfMonth)
+            return $"Your birthday is in {bDay - Game1.dayOfMonth} days ({bSeason} {bDay})";
+
+        return $"Your birthday: {bSeason} {bDay}";
+    }
+
+    private static string? GetFestivalInfo()
+    {
+        var season = Game1.currentSeason;
+        var day = Game1.dayOfMonth;
+        var key = $"{season}{day}";
+
+        var festival = key switch
+        {
+            "spring13" => "Egg Festival",
+            "spring24" => "Flower Dance",
+            "summer11" => "Luau",
+            "summer28" => "Dance of the Moonlight Jellies",
+            "fall16" => "Stardew Valley Fair",
+            "fall27" => "Spirit's Eve",
+            "winter8" => "Festival of Ice",
+            "winter15" or "winter16" or "winter17" => "Night Market",
+            "winter25" => "Feast of the Winter Star",
+            _ => null
+        };
+
+        return festival != null ? $"Festival today: {festival}" : null;
     }
 
     private static string GetWeatherDescription()
