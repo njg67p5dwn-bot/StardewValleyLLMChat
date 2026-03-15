@@ -148,7 +148,7 @@ Provider routing in `ModEntry.CreateLlmProvider()`:
 ## Known Issues / TODO
 
 ### Must fix
-- [ ] Cross-platform SDL2 interop: Currently hardcoded `libSDL2-2.0.so.0` (Linux). Needs conditional loading for Windows (`SDL2.dll`) and macOS (`libSDL2.dylib`)
+- [x] Cross-platform SDL2 interop: Uses `NativeLibrary.Load()` with runtime OS detection for Windows (`SDL2.dll`), macOS (`libSDL2.dylib`), Linux (`libSDL2-2.0.so.0`)
 - [ ] Korean IME composition display: The composing character (e.g., "ㅇ" → "요") is NOT visible during typing. Only committed characters show. Would need SDL2 `SDL_TEXTEDITING` event handling to display preedit text
 
 ### Should do

@@ -43,12 +43,35 @@ public class ChatMenu : IClickableMenu
 
     private record DisplayMessage(string Speaker, string Text, bool IsPlayer);
 
-    // SDL2 interop for IME composition tracking
-    [DllImport("libSDL2-2.0.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void SDL_StopTextInput();
+    // SDL2 interop for IME composition tracking (cross-platform)
+    private static class SDL2
+    {
+        private static readonly IntPtr _lib;
 
-    [DllImport("libSDL2-2.0.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void SDL_StartTextInput();
+        private delegate void VoidDelegate();
+        private static readonly VoidDelegate _startTextInput;
+        private static readonly VoidDelegate _stopTextInput;
+
+        static SDL2()
+        {
+            string libName;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                libName = "SDL2.dll";
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                libName = "libSDL2.dylib";
+            else
+                libName = "libSDL2-2.0.so.0";
+
+            _lib = NativeLibrary.Load(libName);
+            _startTextInput = Marshal.GetDelegateForFunctionPointer<VoidDelegate>(
+                NativeLibrary.GetExport(_lib, "SDL_StartTextInput"));
+            _stopTextInput = Marshal.GetDelegateForFunctionPointer<VoidDelegate>(
+                NativeLibrary.GetExport(_lib, "SDL_StopTextInput"));
+        }
+
+        public static void StartTextInput() => _startTextInput();
+        public static void StopTextInput() => _stopTextInput();
+    }
 
     public ChatMenu(
         NPC npc,
@@ -105,7 +128,7 @@ public class ChatMenu : IClickableMenu
         Game1.game1.Window.TextInput += OnTextInput;
 
         // Enable SDL text input for IME
-        try { SDL_StartTextInput(); } catch { }
+        try { SDL2.StartTextInput(); } catch { }
 
         ScrollToBottom();
     }
@@ -143,8 +166,8 @@ public class ChatMenu : IClickableMenu
     {
         try
         {
-            SDL_StopTextInput();
-            SDL_StartTextInput();
+            SDL2.StopTextInput();
+            SDL2.StartTextInput();
         }
         catch { }
     }
