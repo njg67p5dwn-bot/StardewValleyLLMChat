@@ -1,0 +1,11 @@
+{
+  "Name": "LLM Chat",
+  "Author": "kim",
+  "Version": "1.0.0",
+  "Description": "Chat with Stardew Valley NPCs using LLM (Claude, GPT, etc.)",
+  "UniqueID": "kim.LLMChat",
+  "EntryDll": "LLMChat.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": [],
+  "Dependencies": []
+}
