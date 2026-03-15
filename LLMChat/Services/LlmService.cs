@@ -11,15 +11,20 @@ public class LlmService
     private readonly int _maxTokens;
     private int _dailyCallCount;
     private int _dailyCallLimit;
+    private readonly string _logDir;
+    private bool _debugLogging;
 
     public bool IsGenerating { get; private set; }
 
-    public LlmService(ILlmProvider provider, IMonitor monitor, int maxTokens, int dailyCallLimit)
+    public LlmService(ILlmProvider provider, IMonitor monitor, int maxTokens, int dailyCallLimit,
+        string modDir, bool debugLogging = false)
     {
         _provider = provider;
         _monitor = monitor;
         _maxTokens = maxTokens;
         _dailyCallLimit = dailyCallLimit;
+        _debugLogging = debugLogging;
+        _logDir = Path.Combine(modDir, "debug_logs");
     }
 
     public void ResetDailyCount()
@@ -49,6 +54,9 @@ public class LlmService
         {
             _dailyCallCount++;
 
+            if (_debugLogging)
+                LogLlmInput("chat", systemPrompt, history, userMessage);
+
             string response;
             if (onToken != null)
             {
@@ -62,6 +70,9 @@ public class LlmService
                     systemPrompt, history, userMessage, _maxTokens, cancellationToken
                 );
             }
+
+            if (_debugLogging)
+                LogLlmOutput("chat", response);
 
             return response;
         }
@@ -121,6 +132,9 @@ If there are no new key memories, write: - (none)
 
 Respond in the same language the conversation is in.";
 
+            if (_debugLogging)
+                LogLlmInput($"summarize_{npcName}", systemPrompt, new List<ChatMessage>(), conversationText);
+
             var response = await _provider.GenerateResponseAsync(
                 systemPrompt,
                 new List<ChatMessage>(),
@@ -167,6 +181,55 @@ Respond in the same language the conversation is in.";
         }
 
         return (summary, keyMemories);
+    }
+
+    private void LogLlmInput(string label, string systemPrompt, List<ChatMessage> history, string userMessage)
+    {
+        try
+        {
+            Directory.CreateDirectory(_logDir);
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var path = Path.Combine(_logDir, $"{timestamp}_{label}_input.txt");
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("========== SYSTEM PROMPT ==========");
+            sb.AppendLine(systemPrompt);
+            sb.AppendLine();
+
+            if (history.Count > 0)
+            {
+                sb.AppendLine("========== HISTORY ==========");
+                foreach (var msg in history)
+                    sb.AppendLine($"[{msg.Role}] ({msg.GameDate}) {msg.Content}");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("========== USER MESSAGE ==========");
+            sb.AppendLine(userMessage);
+
+            File.WriteAllText(path, sb.ToString());
+            _monitor.Log($"Debug log saved: {path}", LogLevel.Debug);
+        }
+        catch (Exception ex)
+        {
+            _monitor.Log($"Failed to write debug log: {ex.Message}", LogLevel.Warn);
+        }
+    }
+
+    private void LogLlmOutput(string label, string response)
+    {
+        try
+        {
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var path = Path.Combine(_logDir, $"{timestamp}_{label}_output.txt");
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("========== LLM RESPONSE ==========");
+            sb.AppendLine(response);
+
+            File.WriteAllText(path, sb.ToString());
+        }
+        catch { }
     }
 
     private static string GetErrorMessage(Exception ex)

@@ -31,4 +31,7 @@ public class ModConfig
 
     /// <summary>Language for NPC responses</summary>
     public string ResponseLanguage { get; set; } = "ko";
+
+    /// <summary>Log full LLM input (system prompt + history + user message) to file for debugging</summary>
+    public bool DebugLogging { get; set; } = false;
 }

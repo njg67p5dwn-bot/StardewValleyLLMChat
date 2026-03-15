@@ -47,7 +47,8 @@ public class ModEntry : Mod
 
         // Initialize LLM service
         var provider = CreateLlmProvider();
-        _llmService = new LlmService(provider, Monitor, _config.MaxTokens, _config.DailyCallLimit);
+        _llmService = new LlmService(provider, Monitor, _config.MaxTokens, _config.DailyCallLimit,
+            helper.DirectoryPath, _config.DebugLogging);
 
         // Apply Harmony patches
         var harmony = new Harmony(ModManifest.UniqueID);
@@ -94,7 +95,8 @@ public class ModEntry : Mod
                 // Reinitialize services with new config
                 Strings.SetLanguage(_config.ResponseLanguage);
                 var provider = CreateLlmProvider();
-                _llmService = new LlmService(provider, Monitor, _config.MaxTokens, _config.DailyCallLimit);
+                _llmService = new LlmService(provider, Monitor, _config.MaxTokens, _config.DailyCallLimit,
+                    Helper.DirectoryPath, _config.DebugLogging);
             }
         );
 
