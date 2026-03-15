@@ -1,3 +1,4 @@
+using LLMChat.Data;
 using StardewModdingAPI;
 using StardewValley;
 
@@ -52,7 +53,7 @@ public class PersonalityManager
         return _personalities.GetValueOrDefault(npcName);
     }
 
-    public string BuildSystemPrompt(NPC npc)
+    public string BuildSystemPrompt(NPC npc, ConversationHistory? history = null)
     {
         var personality = GetPersonality(npc.Name);
         var prompt = new System.Text.StringBuilder();
@@ -119,6 +120,25 @@ public class PersonalityManager
         prompt.AppendLine($"- Player name: {farmer.Name}");
         prompt.AppendLine($"- Farm name: {farmer.farmName.Value}");
         prompt.AppendLine();
+
+        // Long-term memory
+        if (history != null)
+        {
+            if (history.KeyMemories.Count > 0)
+            {
+                prompt.AppendLine("## Key Memories (important past events with this player)");
+                foreach (var memory in history.KeyMemories)
+                    prompt.AppendLine($"- {memory}");
+                prompt.AppendLine();
+            }
+
+            if (!string.IsNullOrEmpty(history.RecentSummary))
+            {
+                prompt.AppendLine("## Recent Conversation Summary");
+                prompt.AppendLine(history.RecentSummary);
+                prompt.AppendLine();
+            }
+        }
 
         // Instructions
         prompt.AppendLine("## Instructions");

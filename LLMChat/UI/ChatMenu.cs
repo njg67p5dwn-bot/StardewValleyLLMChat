@@ -200,8 +200,8 @@ public class ChatMenu : IClickableMenu
         _displayMessages.Add(new DisplayMessage(_npc.displayName, "", false));
 
         var gameDate = GetGameDate();
-        var systemPrompt = _personalityManager.BuildSystemPrompt(_npc);
         var history = _conversationStore.GetHistory(_npc.Name);
+        var systemPrompt = _personalityManager.BuildSystemPrompt(_npc, history);
 
         _cts = new CancellationTokenSource();
 

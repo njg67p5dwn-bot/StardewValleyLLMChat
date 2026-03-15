@@ -39,7 +39,7 @@ public class ModEntry : Mod
         _personalityManager.LoadPersonalities();
 
         // Initialize conversation store
-        _conversationStore = new ConversationStore(helper, _config.ConversationHistorySize);
+        _conversationStore = new ConversationStore(helper, Monitor, _config.ConversationHistorySize);
 
         // Initialize LLM service
         var provider = CreateLlmProvider();
@@ -196,8 +196,18 @@ public class ModEntry : Mod
         Monitor.Log("Conversation history loaded for current save.", LogLevel.Debug);
     }
 
-    private void OnSaving(object? sender, SavingEventArgs e)
+    private async void OnSaving(object? sender, SavingEventArgs e)
     {
+        // Process pending summarizations before saving
+        try
+        {
+            await _conversationStore.ProcessPendingSummarizationsAsync(_llmService);
+        }
+        catch (Exception ex)
+        {
+            Monitor.Log($"Summarization error during save: {ex.Message}", LogLevel.Warn);
+        }
+
         _conversationStore.SaveAll();
         Monitor.Log("Conversation history saved.", LogLevel.Debug);
     }
