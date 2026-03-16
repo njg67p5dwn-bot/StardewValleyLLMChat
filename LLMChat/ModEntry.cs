@@ -18,6 +18,7 @@ public class ModEntry : Mod
     private ConversationStore _conversationStore = null!;
     private LlmService _llmService = null!;
     private WorldStateTracker _worldStateTracker = null!;
+    private VillageEventManager? _villageEventManager;
 
     public override void Entry(IModHelper helper)
     {
@@ -50,6 +51,10 @@ public class ModEntry : Mod
         _llmService = new LlmService(provider, Monitor, _config.MaxTokens, _config.DailyCallLimit,
             helper.DirectoryPath, _config.DebugLogging);
 
+        // Initialize village event manager (if enabled)
+        if (_config.EnableVillageEvents)
+            _villageEventManager = new VillageEventManager(_personalityManager, helper, Monitor);
+
         // Apply Harmony patches
         var harmony = new Harmony(ModManifest.UniqueID);
         DialoguePatcher.Initialize(Monitor, OnChatRequested);
@@ -65,6 +70,7 @@ public class ModEntry : Mod
         // Debug console commands
         helper.ConsoleCommands.Add("llm_settime", "Set game time (e.g., llm_settime 800)", OnSetTime);
         helper.ConsoleCommands.Add("llm_money", "Set player money (e.g., llm_money 1000000)", OnSetMoney);
+        helper.ConsoleCommands.Add("llm_events", "Show today's village events", OnShowEvents);
 
         Monitor.Log("LLM Chat mod loaded!", LogLevel.Info);
     }
@@ -154,6 +160,14 @@ public class ModEntry : Mod
             interval: 5
         );
 
+        configMenu.AddBoolOption(
+            mod: ModManifest,
+            name: () => "Village Events",
+            tooltip: () => "Generate daily village events via LLM (costs 1 API call per game day)",
+            getValue: () => _config.EnableVillageEvents,
+            setValue: value => _config.EnableVillageEvents = value
+        );
+
         configMenu.AddTextOption(
             mod: ModManifest,
             name: () => "Response Language",
@@ -200,6 +214,7 @@ public class ModEntry : Mod
     private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
     {
         _conversationStore.Clear();
+        _villageEventManager?.OnSaveLoaded();
         Monitor.Log("Conversation history loaded for current save.", LogLevel.Debug);
     }
 
@@ -215,6 +230,7 @@ public class ModEntry : Mod
             Monitor.Log($"Summarization error during save: {ex.Message}", LogLevel.Warn);
         }
 
+        _villageEventManager?.SaveToHistory();
         _conversationStore.SaveAll();
         Monitor.Log("Conversation history saved.", LogLevel.Debug);
     }
@@ -223,6 +239,7 @@ public class ModEntry : Mod
     {
         _llmService.ResetDailyCount();
         _worldStateTracker.OnDayStarted();
+        _villageEventManager?.OnDayStarted(_llmService);
     }
 
     private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
@@ -261,7 +278,7 @@ public class ModEntry : Mod
             return;
         }
 
-        Game1.activeClickableMenu = new ChatMenu(npc, _llmService, _personalityManager, _conversationStore, _worldStateTracker);
+        Game1.activeClickableMenu = new ChatMenu(npc, _llmService, _personalityManager, _conversationStore, _worldStateTracker, _villageEventManager);
     }
 
     private void OnSetTime(string command, string[] args)
@@ -298,6 +315,67 @@ public class ModEntry : Mod
 
         Game1.player.Money = amount;
         Monitor.Log($"Money set to {amount}g.", LogLevel.Info);
+    }
+
+    private void OnShowEvents(string command, string[] args)
+    {
+        if (_villageEventManager == null)
+        {
+            Monitor.Log("Village events are disabled. Set EnableVillageEvents: true in config.", LogLevel.Info);
+            return;
+        }
+
+        if (_villageEventManager.IsGenerating)
+        {
+            Monitor.Log("Village events are still being generated...", LogLevel.Info);
+            return;
+        }
+
+        // Show events for a specific NPC, or all events
+        var npcFilter = args.Length > 0 ? args[0] : null;
+
+        if (npcFilter != null)
+        {
+            var (involved, gossip) = _villageEventManager.GetEventsForNpc(npcFilter);
+            if (involved.Count == 0 && gossip.Count == 0)
+            {
+                Monitor.Log($"No events for {npcFilter} today.", LogLevel.Info);
+                return;
+            }
+            Monitor.Log($"=== Events for {npcFilter} ===", LogLevel.Info);
+            foreach (var (ev, perspective) in involved)
+                Monitor.Log($"  [Personal] {perspective}", LogLevel.Info);
+            foreach (var ev in gossip)
+                Monitor.Log($"  [Gossip] {ev.Description}", LogLevel.Info);
+        }
+        else
+        {
+            // Show all NPCs that have some village event relevance
+            var allNpcs = new[] {
+                "Abigail", "Alex", "Caroline", "Clint", "Demetrius", "Elliott",
+                "Emily", "Evelyn", "George", "Gus", "Haley", "Harvey",
+                "Jas", "Jodi", "Kent", "Leah", "Lewis", "Linus",
+                "Marnie", "Maru", "Pam", "Penny", "Pierre", "Robin",
+                "Sam", "Sandy", "Sebastian", "Shane", "Vincent", "Willy", "Wizard"
+            };
+
+            bool anyEvents = false;
+            foreach (var npc in allNpcs)
+            {
+                var (involved, gossip) = _villageEventManager.GetEventsForNpc(npc);
+                if (involved.Count == 0 && gossip.Count == 0) continue;
+
+                anyEvents = true;
+                Monitor.Log($"--- {npc} ---", LogLevel.Info);
+                foreach (var (ev, perspective) in involved)
+                    Monitor.Log($"  [Personal] {perspective}", LogLevel.Info);
+                foreach (var ev in gossip)
+                    Monitor.Log($"  [Gossip] {ev.Description}", LogLevel.Info);
+            }
+
+            if (!anyEvents)
+                Monitor.Log("No village events today. (Try sleeping to trigger next day's events)", LogLevel.Info);
+        }
     }
 
     private static NPC? FindNearbyNpc(Farmer farmer)

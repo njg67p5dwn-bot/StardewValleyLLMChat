@@ -232,6 +232,43 @@ Respond in the same language the conversation is in.";
         catch { }
     }
 
+    /// <summary>
+    /// Generate village events. Uses non-streaming, no history.
+    /// </summary>
+    public async Task<string> GenerateEventAsync(
+        string prompt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!CanMakeCall())
+            return "";
+
+        try
+        {
+            _dailyCallCount++;
+
+            if (_debugLogging)
+                LogLlmInput("village_events", prompt, new List<ChatMessage>(), "Generate today's village events");
+
+            var response = await _provider.GenerateResponseAsync(
+                prompt,
+                new List<ChatMessage>(),
+                "Generate today's village events.",
+                500,
+                cancellationToken
+            );
+
+            if (_debugLogging)
+                LogLlmOutput("village_events", response);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _monitor.Log($"Village event generation failed: {ex.Message}", LogLevel.Warn);
+            return "";
+        }
+    }
+
     private static string GetErrorMessage(Exception ex)
     {
         if (ex.Message.Contains("401") || ex.Message.Contains("Unauthorized"))

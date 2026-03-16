@@ -53,7 +53,8 @@ public class PersonalityManager
         return _personalities.GetValueOrDefault(npcName);
     }
 
-    public string BuildSystemPrompt(NPC npc, ConversationHistory? history = null, List<string>? topics = null)
+    public string BuildSystemPrompt(NPC npc, ConversationHistory? history = null, List<string>? topics = null,
+        (List<(VillageEvent Event, string Perspective)> Involved, List<VillageEvent> Gossip)? villageEvents = null)
     {
         var personality = GetPersonality(npc.Name);
         var prompt = new System.Text.StringBuilder();
@@ -138,6 +139,26 @@ public class PersonalityManager
             foreach (var topic in topics)
                 prompt.AppendLine($"- {topic}");
             prompt.AppendLine();
+        }
+
+        // Village events
+        if (villageEvents != null)
+        {
+            var (involved, gossip) = villageEvents.Value;
+
+            if (involved.Count > 0 || gossip.Count > 0)
+            {
+                prompt.AppendLine("## Today's Village Events");
+
+                foreach (var (ev, perspective) in involved)
+                    prompt.AppendLine($"- [Personal] {perspective}");
+
+                foreach (var ev in gossip)
+                    prompt.AppendLine($"- [Gossip] You heard that: {ev.Description}");
+
+                prompt.AppendLine("(Mention these naturally if relevant to the conversation, don't force them.)");
+                prompt.AppendLine();
+            }
         }
 
         // Long-term memory

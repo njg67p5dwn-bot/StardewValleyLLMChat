@@ -27,6 +27,7 @@ public class ChatMenu : IClickableMenu
     private readonly PersonalityManager _personalityManager;
     private readonly ConversationStore _conversationStore;
     private readonly WorldStateTracker _worldStateTracker;
+    private readonly VillageEventManager? _villageEventManager;
     private readonly List<DisplayMessage> _displayMessages = new();
 
     private ClickableTextureComponent _sendButton;
@@ -92,7 +93,8 @@ public class ChatMenu : IClickableMenu
         LlmService llmService,
         PersonalityManager personalityManager,
         ConversationStore conversationStore,
-        WorldStateTracker worldStateTracker)
+        WorldStateTracker worldStateTracker,
+        VillageEventManager? villageEventManager = null)
         : base(
             (Game1.uiViewport.Width - MenuWidth) / 2,
             (Game1.uiViewport.Height - MenuHeight) / 2,
@@ -105,6 +107,7 @@ public class ChatMenu : IClickableMenu
         _personalityManager = personalityManager;
         _conversationStore = conversationStore;
         _worldStateTracker = worldStateTracker;
+        _villageEventManager = villageEventManager;
 
         // Load existing conversation history into display
         var history = _conversationStore.GetHistory(npc.Name);
@@ -220,7 +223,8 @@ public class ChatMenu : IClickableMenu
         var gameDate = GetGameDate();
         var history = _conversationStore.GetHistory(_npc.Name);
         var topics = _worldStateTracker.GetTopicsForNpc(_npc);
-        var systemPrompt = _personalityManager.BuildSystemPrompt(_npc, history, topics);
+        var villageEvents = _villageEventManager?.GetEventsForNpc(_npc.Name);
+        var systemPrompt = _personalityManager.BuildSystemPrompt(_npc, history, topics, villageEvents);
 
         _cts = new CancellationTokenSource();
 
