@@ -76,7 +76,8 @@ public class PersonalityManager
             if (personality.Relationships.Count > 0)
             {
                 prompt.AppendLine($"## Relationships");
-                foreach (var (name, relation) in personality.Relationships)
+                var dynamicRelationships = GetDynamicRelationships(npc.Name, personality.Relationships);
+                foreach (var (name, relation) in dynamicRelationships)
                     prompt.AppendLine($"- {name}: {relation}");
                 prompt.AppendLine();
             }
@@ -238,6 +239,38 @@ public class PersonalityManager
         if (Game1.isRaining) return Game1.isLightning ? "thunderstorm" : "rainy";
         if (Game1.isSnowing) return "snowy";
         return "sunny";
+    }
+
+    /// <summary>
+    /// Override NPC relationships based on game state (e.g., Kent arrives Year 2).
+    /// </summary>
+    private static Dictionary<string, string> GetDynamicRelationships(string npcName, Dictionary<string, string> baseRelationships)
+    {
+        var result = new Dictionary<string, string>(baseRelationships);
+        bool kentIsHome = Game1.year >= 2;
+
+        switch (npcName)
+        {
+            case "Jodi":
+                if (kentIsHome)
+                    result["Kent"] = "husband (recently returned from war, adjusting to his PTSD)";
+                break;
+            case "Sam":
+                if (kentIsHome)
+                    result["Kent"] = "father (recently returned from war, trying to reconnect)";
+                break;
+            case "Vincent":
+                if (kentIsHome)
+                    result["Kent"] = "father (finally home from war, getting to know him again)";
+                break;
+            case "Kent":
+                // Kent shouldn't be chatted with before Year 2, but just in case
+                if (!kentIsHome)
+                    result.Clear();
+                break;
+        }
+
+        return result;
     }
 
     private static string GetLanguageName(string code) => code switch

@@ -321,13 +321,13 @@ public class ModEntry : Mod
     {
         if (_villageEventManager == null)
         {
-            Monitor.Log("Village events are disabled. Set EnableVillageEvents: true in config.", LogLevel.Info);
+            Monitor.Log("Village events are disabled. Set EnableVillageEvents: true in config.", LogLevel.Alert);
             return;
         }
 
         if (_villageEventManager.IsGenerating)
         {
-            Monitor.Log("Village events are still being generated...", LogLevel.Info);
+            Monitor.Log("Village events are still being generated...", LogLevel.Alert);
             return;
         }
 
@@ -339,14 +339,14 @@ public class ModEntry : Mod
             var (involved, gossip) = _villageEventManager.GetEventsForNpc(npcFilter);
             if (involved.Count == 0 && gossip.Count == 0)
             {
-                Monitor.Log($"No events for {npcFilter} today.", LogLevel.Info);
+                Monitor.Log($"No events for {npcFilter} today.", LogLevel.Alert);
                 return;
             }
-            Monitor.Log($"=== Events for {npcFilter} ===", LogLevel.Info);
+            Monitor.Log($"=== Events for {npcFilter} ===", LogLevel.Alert);
             foreach (var (ev, perspective) in involved)
-                Monitor.Log($"  [Personal] {perspective}", LogLevel.Info);
+                Monitor.Log($"  [Personal] {perspective}", LogLevel.Alert);
             foreach (var ev in gossip)
-                Monitor.Log($"  [Gossip] {ev.Description}", LogLevel.Info);
+                Monitor.Log($"  [Gossip] {ev.Description}", LogLevel.Alert);
         }
         else
         {
@@ -366,15 +366,15 @@ public class ModEntry : Mod
                 if (involved.Count == 0 && gossip.Count == 0) continue;
 
                 anyEvents = true;
-                Monitor.Log($"--- {npc} ---", LogLevel.Info);
+                Monitor.Log($"--- {npc} ---", LogLevel.Alert);
                 foreach (var (ev, perspective) in involved)
-                    Monitor.Log($"  [Personal] {perspective}", LogLevel.Info);
+                    Monitor.Log($"  [Personal] {perspective}", LogLevel.Alert);
                 foreach (var ev in gossip)
-                    Monitor.Log($"  [Gossip] {ev.Description}", LogLevel.Info);
+                    Monitor.Log($"  [Gossip] {ev.Description}", LogLevel.Alert);
             }
 
             if (!anyEvents)
-                Monitor.Log("No village events today. (Try sleeping to trigger next day's events)", LogLevel.Info);
+                Monitor.Log("No village events today. (Try sleeping to trigger next day's events)", LogLevel.Alert);
         }
     }
 
