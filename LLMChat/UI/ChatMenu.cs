@@ -356,7 +356,7 @@ public class ChatMenu : IClickableMenu
             _inputArea.bounds.Width, _inputArea.bounds.Height
         ), Color.Black * 0.05f);
 
-        // Input text
+        // Input text (with scissor rect clipping for overflow)
         var displayText = _inputText;
         if (string.IsNullOrEmpty(displayText) && !_isWaitingForResponse)
         {
@@ -366,20 +366,34 @@ public class ChatMenu : IClickableMenu
         }
         else
         {
+            float availableWidth = _inputArea.bounds.Width - 16;
+            float textWidth = string.IsNullOrEmpty(displayText)
+                ? 0
+                : Game1.smallFont.MeasureString(displayText).X;
+            float textOffsetX = textWidth > availableWidth ? -(textWidth - availableWidth) : 0;
+
+            // Clip text to input area
+            var oldScissor = b.GraphicsDevice.ScissorRectangle;
+            b.End();
+            b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null,
+                new RasterizerState { ScissorTestEnable = true });
+            b.GraphicsDevice.ScissorRectangle = _inputArea.bounds;
+
             b.DrawString(Game1.smallFont, displayText,
-                new Vector2(_inputArea.bounds.X + 8, _inputArea.bounds.Y + 12),
+                new Vector2(_inputArea.bounds.X + 8 + textOffsetX, _inputArea.bounds.Y + 12),
                 Game1.textColor);
 
             // Blinking cursor
             if (!_isWaitingForResponse && (int)(_cursorBlink % 2) == 0)
             {
-                var textWidth = string.IsNullOrEmpty(displayText)
-                    ? 0
-                    : Game1.smallFont.MeasureString(displayText).X;
                 b.DrawString(Game1.smallFont, "|",
-                    new Vector2(_inputArea.bounds.X + 8 + textWidth, _inputArea.bounds.Y + 12),
+                    new Vector2(_inputArea.bounds.X + 8 + textOffsetX + textWidth, _inputArea.bounds.Y + 12),
                     Game1.textColor);
             }
+
+            b.End();
+            b.GraphicsDevice.ScissorRectangle = oldScissor;
+            b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
         }
     }
 
@@ -401,8 +415,9 @@ public class ChatMenu : IClickableMenu
 
         SpriteText.drawString(b, _npc.displayName, portraitX + PortraitSize + 12, portraitY + 16);
 
-        drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
-            xPositionOnScreen + Padding, portraitY + PortraitSize + 8, width - Padding * 2, 4, Color.White);
+        b.Draw(Game1.fadeToBlackRect,
+            new Rectangle(xPositionOnScreen + Padding, portraitY + PortraitSize + 8, width - Padding * 2, 1),
+            Color.Brown * 0.3f);
     }
 
     private void DrawMessages(SpriteBatch b)
