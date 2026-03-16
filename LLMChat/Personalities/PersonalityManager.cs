@@ -167,6 +167,7 @@ public class PersonalityManager
         prompt.AppendLine("- Never mention being an AI, language model, or chatbot.");
         prompt.AppendLine("- React naturally to the current season, weather, time, and your relationship with the player.");
         prompt.AppendLine("- Reference your known likes, dislikes, and relationships when relevant.");
+        prompt.AppendLine("- Start every response with an emotion tag: [neutral], [happy], [sad], [angry], [surprised], or [special]. Choose the emotion that best matches how you feel. The player will not see this tag.");
 
         return prompt.ToString();
     }

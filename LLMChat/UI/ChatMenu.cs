@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -17,9 +18,9 @@ public class ChatMenu : IClickableMenu
     private const int MenuWidth = 800;
     private const int MenuHeight = 600;
     private const int Padding = 16;
-    private const int MessageAreaHeight = 400;
+    private const int MessageAreaHeight = 336;
     private const int InputHeight = 48;
-    private const int PortraitSize = 64;
+    private const int PortraitSize = 128;
 
     private readonly NPC _npc;
     private readonly LlmService _llmService;
@@ -41,6 +42,18 @@ public class ChatMenu : IClickableMenu
     private string _composingText = "";  // IME preedit text
     private bool _inputActive = true;
     private float _cursorBlink;
+
+    // Emotion-based portrait
+    private int _currentEmotionIndex;
+    private bool _emotionParsed;
+    private static readonly Regex EmotionTagRegex = new(
+        @"^\s*\[(neutral|happy|sad|angry|surprised|special)\]\s*",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Dictionary<string, int> EmotionToIndex = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "neutral", 0 }, { "happy", 1 }, { "sad", 2 },
+        { "angry", 3 }, { "surprised", 4 }, { "special", 5 }
+    };
 
     private record DisplayMessage(string Speaker, string Text, bool IsPlayer);
 
@@ -197,6 +210,8 @@ public class ChatMenu : IClickableMenu
         _inputText = "";
         _isWaitingForResponse = true;
         _streamingText = "";
+        _emotionParsed = false;
+        _currentEmotionIndex = 0;
         ScrollToBottom();
 
         // Add placeholder for NPC response
@@ -218,23 +233,41 @@ public class ChatMenu : IClickableMenu
                 onToken: token =>
                 {
                     _streamingText += token;
+                    // Parse emotion tag from the beginning of the response
+                    if (!_emotionParsed && _streamingText.Contains(']'))
+                    {
+                        var match = EmotionTagRegex.Match(_streamingText);
+                        if (match.Success)
+                        {
+                            var emotion = match.Groups[1].Value;
+                            if (EmotionToIndex.TryGetValue(emotion, out var idx))
+                                _currentEmotionIndex = idx;
+                            _streamingText = _streamingText[match.Length..];
+                        }
+                        _emotionParsed = true;
+                    }
+                    var displayText = _emotionParsed
+                        ? _streamingText
+                        : EmotionTagRegex.Replace(_streamingText, "");
                     if (_displayMessages.Count > 0)
                     {
-                        _displayMessages[^1] = new DisplayMessage(_npc.displayName, _streamingText, false);
+                        _displayMessages[^1] = new DisplayMessage(_npc.displayName, displayText, false);
                     }
                     ScrollToBottom();
                 },
                 cancellationToken: _cts.Token
             );
 
+            // Strip emotion tag from final response
+            var cleanResponse = EmotionTagRegex.Replace(response, "");
             if (_displayMessages.Count > 0)
             {
-                _displayMessages[^1] = new DisplayMessage(_npc.displayName, response, false);
+                _displayMessages[^1] = new DisplayMessage(_npc.displayName, cleanResponse, false);
             }
             ScrollToBottom();
 
             _conversationStore.AddMessage(_npc.Name, "user", text, gameDate);
-            _conversationStore.AddMessage(_npc.Name, "assistant", response, gameDate);
+            _conversationStore.AddMessage(_npc.Name, "assistant", cleanResponse, gameDate);
         }
         catch (OperationCanceledException)
         {
@@ -404,16 +437,22 @@ public class ChatMenu : IClickableMenu
 
         try
         {
+            var portrait = _npc.Portrait;
+            int idx = _currentEmotionIndex;
+            int cols = portrait.Width / 64;
+            int rows = portrait.Height / 64;
+            int maxIndex = cols * rows - 1;
+            if (idx > maxIndex || idx < 0) idx = 0;
             b.Draw(
-                _npc.Portrait,
+                portrait,
                 new Rectangle(portraitX, portraitY, PortraitSize, PortraitSize),
-                new Rectangle(0, 0, 64, 64),
+                new Rectangle((idx % cols) * 64, (idx / cols) * 64, 64, 64),
                 Color.White
             );
         }
         catch { }
 
-        SpriteText.drawString(b, _npc.displayName, portraitX + PortraitSize + 12, portraitY + 16);
+        SpriteText.drawString(b, _npc.displayName, portraitX + PortraitSize + 12, portraitY + PortraitSize / 2 - 16);
 
         b.Draw(Game1.fadeToBlackRect,
             new Rectangle(xPositionOnScreen + Padding, portraitY + PortraitSize + 8, width - Padding * 2, 1),
